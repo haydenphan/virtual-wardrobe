@@ -1,15 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:virtual_wardrobe/api/post_image.api.dart';
-import 'package:virtual_wardrobe/model/selecteditem.dart';
 import 'dart:io';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-import 'package:virtual_wardrobe/pages/widgets/display_picture_screen.dart';
+import 'package:virtual_wardrobe/pages/widgets/suggestion_items.dart';
 
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
-  final IO.Socket socket = IO.io('http://localhost:3000');
+  final IO.Socket socket = IO.io('http://172.16.255.213:5000/stream');
 
   CameraScreen({super.key, required this.cameras});
 
@@ -20,13 +21,13 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
-  final Stream<bool> _isProcessing = Stream.value(false);
+  final StreamController<bool> _isProcessingController = StreamController();
 
   @override
   void initState() {
     super.initState();
     final frontCamera = widget.cameras.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.front,
+      (camera) => camera.lensDirection == CameraLensDirection.back,
     );
     _controller = CameraController(
       frontCamera,
@@ -44,11 +45,12 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   void takePictureEverySecond() async {
-    while (true && this._controller.value.isInitialized) {
+    while (true && _controller.value.isInitialized) {
       await Future.delayed(const Duration(seconds: 1));
       final rs = await _controller.takePicture();
       //Push to api to process
       //TODO: add id
+      print("i take pucture behind the screen");
       File image = File(rs.path);
       postImage(image, 'id go here');
       //transfer image to server
@@ -58,7 +60,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _isProcessing.listen((event) {
+    _isProcessingController.stream.listen((event) {
       if (event) {
         takePictureEverySecond();
       }
@@ -83,32 +85,20 @@ class _CameraScreenState extends State<CameraScreen> {
           AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            title: const Text('Camera Screen'),
+            title: const Text('Trial Room'),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
           ),
           Positioned(
-            bottom: 120,
-            left: 0,
-            right: 0,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: <Widget>[
-                  for (int i = 0; i < 10; i++)
-                    GestureDetector(
-                      onTap: () {
-                        print("hello");
-                      },
-                      child:
-                          SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                    ),
-                ],
-              ),
-            ),
-          ),
+              bottom: 120,
+              left: 0,
+              right: 0,
+              child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 100,
+                  child: const SuggestionItems())),
           Positioned(
             bottom: 20,
             left: 0,
@@ -128,9 +118,23 @@ class _CameraScreenState extends State<CameraScreen> {
                       await _initializeControllerFuture;
 
                       final image = await _controller.takePicture();
-
-                      postImage(File(image.path), 'id go here').then(
-                          (value) => {showImagePreviewPopup(context, image)});
+                      _isProcessingController.add(true);
+                      //Change camera to back
+                      _controller = CameraController(
+                        widget.cameras.firstWhere(
+                          (camera) =>
+                              camera.lensDirection == CameraLensDirection.back,
+                        ),
+                        ResolutionPreset.low,
+                        enableAudio: false,
+                        imageFormatGroup: ImageFormatGroup.yuv420,
+                      );
+                      postImage(File(image.path), 'id go here')
+                          .then((value) => {
+                                showImagePreviewPopup(context, value).then(
+                                    (value) =>
+                                        _isProcessingController.add(false))
+                              });
                     } catch (e, stacktrace) {
                       debugPrintStack(
                           label: e.toString(), stackTrace: stacktrace);
@@ -146,8 +150,8 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 }
 
-void showImagePreviewPopup(BuildContext context, String image) {
-  showDialog(
+Future<dynamic> showImagePreviewPopup(BuildContext context, String image) {
+  return showDialog(
     context: context,
     builder: (context) => AlertDialog(
       content: Image.network(image),
