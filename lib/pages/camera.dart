@@ -20,7 +20,7 @@ class _CameraScreenState extends State<CameraScreen> {
   void initState() {
     super.initState();
     _controller = CameraController(
-      widget.cameras[0],
+      widget.cameras[1],
       ResolutionPreset.max,
     );
     _initializeControllerFuture = _controller.initialize();
@@ -94,21 +94,19 @@ class _CameraScreenState extends State<CameraScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: IconButton(
-                  icon: Icon(
-                    Icons.camera_alt_rounded, 
-                    size: 35.0, 
-                    color: Color.fromARGB(255, 255, 255, 255)
-                  ),
+                  icon: Icon(Icons.camera_alt_rounded,
+                      size: 35.0, color: Color.fromARGB(255, 255, 255, 255)),
                   onPressed: () async {
                     try {
                       await _initializeControllerFuture;
-              
+
                       final image = await _controller.takePicture();
-              
+
                       // If the picture was taken, display it on a new screen.
                       await Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => DisplayPictureScreen(imagePath: image.path),
+                          builder: (context) =>
+                              DisplayPictureScreen(imagePath: image.path),
                         ),
                       );
                     } catch (e) {
