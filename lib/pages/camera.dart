@@ -15,6 +15,7 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
+  int currentIndex = 0;
 
   @override
   void initState() {
@@ -74,9 +75,11 @@ class _CameraScreenState extends State<CameraScreen> {
                   for (int i = 0; i < 10; i++)
                     GestureDetector(
                       onTap: () {
-                        print("hello");
+                        setState(() {
+                          currentIndex = i;
+                        });
                       },
-                      child: SelectedItem(selectedImageUrl: 'assets/blazer.png'),
+                      child: SelectedItem(selectedImageUrl: 'assets/blazer.png', isSelected: currentIndex == i ? true : false),
                     ),
                 ],
               ),

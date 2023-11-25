@@ -5,7 +5,7 @@ class SelectedItem extends StatelessWidget {
   String selectedImageUrl;
   bool? isSelected;
 
-  SelectedItem({required this.selectedImageUrl, this.isSelected, super.key});
+  SelectedItem({required this.selectedImageUrl, this.isSelected = false, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,7 @@ class SelectedItem extends StatelessWidget {
       margin: const EdgeInsets.only(right: 10.0),
       decoration: BoxDecoration(
         border: Border.all(
-          color: isSelected != null ? AppColors.primary : Colors.transparent,
+          color: isSelected! ? AppColors.primary : Colors.transparent,
           width: 4.0,
         ),
         borderRadius: const BorderRadius.all(Radius.circular(10.0)),
