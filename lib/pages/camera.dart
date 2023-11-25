@@ -3,10 +3,12 @@ import 'package:camera/camera.dart';
 import 'package:virtual_wardrobe/model/selecteditem.dart';
 import 'dart:io';
 
+import 'package:virtual_wardrobe/pages/widgets/display_picture_screen.dart';
+
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
 
-  CameraScreen({required this.cameras});
+  CameraScreen({super.key, required this.cameras});
 
   @override
   _CameraScreenState createState() => _CameraScreenState();
@@ -24,7 +26,9 @@ class _CameraScreenState extends State<CameraScreen> {
     );
     _controller = CameraController(
       frontCamera,
-      ResolutionPreset.max,
+      ResolutionPreset.low,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.yuv420,
     );
     _initializeControllerFuture = _controller.initialize();
   }
@@ -44,22 +48,22 @@ class _CameraScreenState extends State<CameraScreen> {
             future: _initializeControllerFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
-                return Container(
+                return SizedBox(
                   width: MediaQuery.of(context).size.width,
                   height: MediaQuery.of(context).size.height,
                   child: CameraPreview(_controller),
                 );
               } else {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
             },
           ),
           AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            title: Text('Camera Screen'),
+            title: const Text('Camera Screen'),
             leading: IconButton(
-              icon: Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -76,7 +80,8 @@ class _CameraScreenState extends State<CameraScreen> {
                       onTap: () {
                         print("hello");
                       },
-                      child: SelectedItem(selectedImageUrl: 'assets/blazer.png'),
+                      child:
+                          SelectedItem(selectedImageUrl: 'assets/blazer.png'),
                     ),
                 ],
               ),
@@ -87,14 +92,14 @@ class _CameraScreenState extends State<CameraScreen> {
             left: 0,
             right: 0,
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Color.fromRGBO(89, 157, 159, 1),
                 shape: BoxShape.circle,
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: IconButton(
-                  icon: Icon(Icons.camera_alt_rounded,
+                  icon: const Icon(Icons.camera_alt_rounded,
                       size: 35.0, color: Color.fromARGB(255, 255, 255, 255)),
                   onPressed: () async {
                     try {
@@ -103,14 +108,14 @@ class _CameraScreenState extends State<CameraScreen> {
                       final image = await _controller.takePicture();
 
                       // If the picture was taken, display it on a new screen.
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              DisplayPictureScreen(imagePath: image.path),
-                        ),
-                      );
-                    } catch (e) {
-                      print(e);
+                      Navigator.push(
+                          (context),
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DisplayPictureScreen(imagePath: image.path),
+                          ));
+                    } catch (e, stacktrace){
+                      debugPrintStack(label: e.toString(), stackTrace: stacktrace);
                     }
                   },
                 ),
@@ -120,16 +125,5 @@ class _CameraScreenState extends State<CameraScreen> {
         ],
       ),
     );
-  }
-}
-
-class DisplayPictureScreen extends StatelessWidget {
-  final String imagePath;
-
-  DisplayPictureScreen({required this.imagePath});
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.file(File(imagePath));
   }
 }

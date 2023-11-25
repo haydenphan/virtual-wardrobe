@@ -8,16 +8,17 @@ import 'firebase_options.dart';
 List<CameraDescription> cameras = [];
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  WidgetsFlutterBinding.ensureInitialized();
   cameras = await availableCameras();
   runApp(MaterialApp(
     initialRoute: '/',
     routes: {
-      '/': (context) => Home(username: 'Khanh Nhi'),
-      '/camera': (context) => CameraScreen(cameras: cameras),
+      '/': (context) => const Home(),
+      '/camera': (context) =>  CameraScreen(cameras: cameras)
     },
   ));
 }
