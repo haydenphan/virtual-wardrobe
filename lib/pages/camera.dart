@@ -19,8 +19,11 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   void initState() {
     super.initState();
+    final frontCamera = widget.cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.front,
+    );
     _controller = CameraController(
-      widget.cameras[0],
+      frontCamera,
       ResolutionPreset.max,
     );
     _initializeControllerFuture = _controller.initialize();
