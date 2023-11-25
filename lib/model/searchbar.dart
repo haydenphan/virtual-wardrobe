@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:virtual_wardrobe/utils/constant.dart';
 
 class SearchBar extends StatelessWidget {
   final String hintText;
   final TextEditingController controller = TextEditingController();
 
-  SearchBar({this.hintText = 'Default Hint Text'});
+  SearchBar({this.hintText = 'Default Hint Text', super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +22,8 @@ class SearchBar extends StatelessWidget {
             borderSide: BorderSide.none,
           ),
           suffixIcon: IconButton(
-            icon: Icon(Icons.search, color: Color.fromRGBO(45, 148, 150, 0.553)),
-            onPressed: () {
-              print(controller.text);
-            },
+            icon: const Icon(Icons.search, color: AppColors.secondary),
+            onPressed: () {},
           ),
         ),
       ),

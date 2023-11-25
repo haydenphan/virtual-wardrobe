@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:virtual_wardrobe/utils/constant.dart';
 
 class SelectedItem extends StatelessWidget {
-
   String selectedImageUrl;
+  bool? isSelected;
 
-  SelectedItem({required this.selectedImageUrl});
+  SelectedItem({required this.selectedImageUrl, this.isSelected, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Image.asset(selectedImageUrl,
-          height: 200.0, width: 200.0,),
+    return Container(
+      height: 100.0,
+      width: 100.0,
+      margin: const EdgeInsets.only(right: 10.0),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: isSelected != null ? AppColors.primary : Colors.transparent,
+          width: 4.0,
+        ),
+        borderRadius: const BorderRadius.all(Radius.circular(10.0)),
+        image: DecorationImage(
+            image: AssetImage(selectedImageUrl), fit: BoxFit.cover),
+      ),
     );
   }
 }

@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:virtual_wardrobe/model/searchbar.dart' as CustomSearchBar;
 import 'package:virtual_wardrobe/model/clothitem.dart' as ClothItems;
 import 'package:virtual_wardrobe/model/functionalbar.dart' as FunctionalBar;
+import 'package:virtual_wardrobe/utils/constant.dart';
 
 class Home extends StatefulWidget {
-  final String username;
-
-  Home({required this.username});
+  const Home({super.key});
 
   @override
   State<Home> createState() => _HomeState();
@@ -17,47 +16,38 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(45, 148, 150, 0.553),
+        elevation: 0,
+        backgroundColor: AppColors.primary,
         title: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Text('Welcome, ${widget.username}'),
-            ),
-            Spacer(),
+            const Text('Welcome, Khanh Nhi'),
+            const Expanded(child: SizedBox()),
             IconButton(
-              icon: Icon(Icons.account_circle,
-                  size: 40.0), 
-              onPressed: () {
-                print('Account button pressed');
-              },
+              icon: const Icon(Icons.account_circle, size: 32.0),
+              onPressed: () {},
             ),
           ],
         ),
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color.fromRGBO(45, 148, 150, 0.553),
+              AppColors.primary,
               Colors.white,
             ],
           ),
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                    width: 360.0,
-                    height: 85.0,
-                    child: CustomSearchBar.SearchBar(
-                      hintText: 'Search',
-                    )),
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5.0),
+              child: CustomSearchBar.SearchBar(
+                hintText: 'Search',
+              ),
             ),
             Expanded(
               child: GridView.count(
@@ -154,12 +144,3 @@ class _HomeState extends State<Home> {
     );
   }
 }
-
-// gradient: LinearGradient(
-//                     begin: Alignment.topCenter,
-//                     end: Alignment.bottomCenter,
-//                     colors: [
-//                       Color.fromRGBO(45, 149, 150, 1),
-//                       Colors.white
-//                     ]
-//                   )
