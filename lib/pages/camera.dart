@@ -5,12 +5,18 @@ import 'package:camera/camera.dart';
 import 'package:virtual_wardrobe/api/post_image.api.dart';
 import 'dart:io';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:virtual_wardrobe/pages/widgets/display_picture_screen.dart';
 
 import 'package:virtual_wardrobe/pages/widgets/suggestion_items.dart';
+import 'package:virtual_wardrobe/utils/constant.dart';
+
+import '../model/product.model.dart';
+import '../model/selecteditem.dart';
 
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
-  final IO.Socket socket = IO.io('http://172.16.255.213:5000/stream');
+  final IO.Socket socket = IO.io('$baseUrl/stream');
+  final StreamController<bool> _isProcessingController = StreamController();
 
   CameraScreen({super.key, required this.cameras});
 
@@ -21,13 +27,19 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
-  final StreamController<bool> _isProcessingController = StreamController();
+
+  int currentIndex = 0;
+  List<Product> products = [];
+
+  Future<List<Product>> getSuggestionItems() async {
+    return getItems();
+  }
 
   @override
   void initState() {
     super.initState();
     final frontCamera = widget.cameras.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.back,
+      (camera) => camera.lensDirection == CameraLensDirection.front,
     );
     _controller = CameraController(
       frontCamera,
@@ -36,6 +48,24 @@ class _CameraScreenState extends State<CameraScreen> {
       imageFormatGroup: ImageFormatGroup.yuv420,
     );
     _initializeControllerFuture = _controller.initialize();
+    // Get products
+    getSuggestionItems().then((value) {
+      setState(() {
+        products = value;
+      });
+    });
+  }
+
+  void takePictureEverySecond() async {
+    while (true && _controller.value.isInitialized) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      final rs = await _controller.takePicture();
+      // Push to api to process
+      File image = File(rs.path);
+      // postImage(image, '1');
+      //transfer image to server
+      widget.socket.emit('image', image.readAsBytesSync());
+    }
   }
 
   @override
@@ -44,27 +74,8 @@ class _CameraScreenState extends State<CameraScreen> {
     super.dispose();
   }
 
-  void takePictureEverySecond() async {
-    while (true && _controller.value.isInitialized) {
-      await Future.delayed(const Duration(seconds: 1));
-      final rs = await _controller.takePicture();
-      //Push to api to process
-      //TODO: add id
-      print("i take pucture behind the screen");
-      File image = File(rs.path);
-      postImage(image, 'id go here');
-      //transfer image to server
-      widget.socket.emit('image', image.readAsBytesSync());
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    _isProcessingController.stream.listen((event) {
-      if (event) {
-        takePictureEverySecond();
-      }
-    });
     return Scaffold(
       body: Stack(
         children: <Widget>[
@@ -72,9 +83,15 @@ class _CameraScreenState extends State<CameraScreen> {
             future: _initializeControllerFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
-                return SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height,
+                double mediaHeight = _controller.value.aspectRatio *
+                    MediaQuery.of(context).size.width;
+                double scale = MediaQuery.of(context).size.height / mediaHeight;
+                return Transform.scale(
+                    scale: scale,
+                    child: Center(child: CameraPreview(_controller)));
+                return Center(
+                  // width: MediaQuery.of(context).size.width,
+                  // height: MediaQuery.of(context).size.height,
                   child: CameraPreview(_controller),
                 );
               } else {
@@ -92,13 +109,28 @@ class _CameraScreenState extends State<CameraScreen> {
             ),
           ),
           Positioned(
-              bottom: 120,
-              left: 0,
-              right: 0,
-              child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 100,
-                  child: const SuggestionItems())),
+            bottom: 120,
+            left: 0,
+            right: 0,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: products.map((product) {
+                  final i = products.indexOf(product);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        currentIndex = i;
+                      });
+                    },
+                    child: SelectedItem(
+                        selectedImageUrl: product.previewUrl,
+                        isSelected: currentIndex == i ? true : false),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
           Positioned(
             bottom: 20,
             left: 0,
@@ -118,26 +150,16 @@ class _CameraScreenState extends State<CameraScreen> {
                       await _initializeControllerFuture;
 
                       final image = await _controller.takePicture();
-                      _isProcessingController.add(true);
-                      //Change camera to back
-                      _controller = CameraController(
-                        widget.cameras.firstWhere(
-                          (camera) =>
-                              camera.lensDirection == CameraLensDirection.back,
+
+                      // If the picture was taken, display it on a new screen.
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              DisplayPictureScreen(imagePath: image.path),
                         ),
-                        ResolutionPreset.low,
-                        enableAudio: false,
-                        imageFormatGroup: ImageFormatGroup.yuv420,
                       );
-                      postImage(File(image.path), 'id go here')
-                          .then((value) => {
-                                showImagePreviewPopup(context, value).then(
-                                    (value) =>
-                                        _isProcessingController.add(false))
-                              });
-                    } catch (e, stacktrace) {
-                      debugPrintStack(
-                          label: e.toString(), stackTrace: stacktrace);
+                    } catch (e) {
+                      print(e);
                     }
                   },
                 ),

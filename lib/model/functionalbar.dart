@@ -27,20 +27,20 @@ class _FunctionalBarState extends State<FunctionalBar> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.shopping_cart_outlined, size: 30.0),
+            icon: const Icon(Icons.shopping_cart_outlined, size: 30.0),
             onPressed: () {
               print('Shopping cart button pressed');
             },
           ),
           Container(
             decoration: BoxDecoration(
-              color: Color.fromRGBO(45, 149, 150, 1),
+              color: const Color.fromRGBO(45, 149, 150, 1),
               borderRadius: BorderRadius.circular(30.0),
             ),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.camera_alt_outlined,
                     size: 30.0,
                     color: Colors.white,
@@ -51,13 +51,13 @@ class _FunctionalBarState extends State<FunctionalBar> {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.notifications_none_outlined, size: 30.0),
+            icon: const Icon(Icons.notifications_none_outlined, size: 30.0),
             onPressed: () {
               print('Notification button pressed');
             },
           ),
           IconButton(
-            icon: Icon(Icons.account_circle_outlined, size: 30.0),
+            icon: const Icon(Icons.account_circle_outlined, size: 30.0),
             onPressed: () {
               print('Account button pressed');
             },

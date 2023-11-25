@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:virtual_wardrobe/model/product.model.dart';
 
 class ClothItem extends StatefulWidget {
-  final String name;
-  final String category;
-  final Map<Color, String> colorImageMap;
-  final String imageUrl;
+  final Product product;
 
   const ClothItem({
-    required this.name,
-    required this.category,
-    required this.colorImageMap,
-    required this.imageUrl,
     super.key,
+    required this.product,
   });
 
   @override
@@ -19,14 +14,14 @@ class ClothItem extends StatefulWidget {
 }
 
 class _ClothItemState extends State<ClothItem> {
-  late Color selectedColor;
+  late String selectedColor;
   late String selectedImageUrl;
 
   @override
   void initState() {
     super.initState();
-    selectedColor = widget.colorImageMap.keys.first;
-    selectedImageUrl = widget.colorImageMap[selectedColor]!;
+    selectedColor = widget.product.colors.first;
+    selectedImageUrl = widget.product.previewUrl;
   }
 
   @override
@@ -38,7 +33,7 @@ class _ClothItemState extends State<ClothItem> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.asset(
+              child: Image.network(
                 selectedImageUrl,
                 fit: BoxFit.cover,
               ),
@@ -62,37 +57,12 @@ class _ClothItemState extends State<ClothItem> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.name,
+                  Text(widget.product.title,
                       style:
                           const TextStyle(color: Colors.black, fontSize: 20)),
-                  Text(widget.category,
+                  Text(widget.product.categories.join(","),
                       style:
                           const TextStyle(color: Colors.black, fontSize: 16)),
-                  Row(
-                    children: widget.colorImageMap.keys
-                        .map((color) => GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedColor = color;
-                                  selectedImageUrl =
-                                      widget.colorImageMap[color]!;
-                                });
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeIn,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 2.0),
-                                width: selectedColor == color ? 25 : 20,
-                                height: selectedColor == color ? 25 : 20,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
                 ],
               ),
             ),
