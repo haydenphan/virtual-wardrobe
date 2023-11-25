@@ -71,16 +71,13 @@ class _CameraScreenState extends State<CameraScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: <Widget>[
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
-                  SelectedItem(selectedImageUrl: 'assets/blazer.png'),
+                  for (int i = 0; i < 10; i++)
+                    GestureDetector(
+                      onTap: () {
+                        print("hello");
+                      },
+                      child: SelectedItem(selectedImageUrl: 'assets/blazer.png'),
+                    ),
                 ],
               ),
             ),

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "572215779142",
+    "project_id": "virtual-wardrobe-cebb3",
+    "storage_bucket": "virtual-wardrobe-cebb3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:572215779142:android:b6f1afc4fcf69957568f47",
+        "android_client_info": {
+          "package_name": "com.example.virtual_wardrobe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkmcNoxRjXgJOujF07c3YJBhbydtWk7DA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
