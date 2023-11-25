@@ -13,6 +13,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   cameras = await availableCameras();
+  
   runApp(MaterialApp(
     initialRoute: '/',
     routes: {
