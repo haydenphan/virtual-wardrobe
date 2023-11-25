@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:virtual_wardrobe/api/post_image.api.dart';
 import 'package:virtual_wardrobe/model/selecteditem.dart';
 import 'dart:io';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import 'package:virtual_wardrobe/pages/widgets/display_picture_screen.dart';
 
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
+  final IO.Socket socket = IO.io('http://localhost:3000');
 
   CameraScreen({super.key, required this.cameras});
 
@@ -17,6 +20,7 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
+  final Stream<bool> _isProcessing = Stream.value(false);
 
   @override
   void initState() {
@@ -39,8 +43,26 @@ class _CameraScreenState extends State<CameraScreen> {
     super.dispose();
   }
 
+  void takePictureEverySecond() async {
+    while (true && this._controller.value.isInitialized) {
+      await Future.delayed(const Duration(seconds: 1));
+      final rs = await _controller.takePicture();
+      //Push to api to process
+      //TODO: add id
+      File image = File(rs.path);
+      postImage(image, 'id go here');
+      //transfer image to server
+      widget.socket.emit('image', image.readAsBytesSync());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    _isProcessing.listen((event) {
+      if (event) {
+        takePictureEverySecond();
+      }
+    });
     return Scaffold(
       body: Stack(
         children: <Widget>[
@@ -107,15 +129,11 @@ class _CameraScreenState extends State<CameraScreen> {
 
                       final image = await _controller.takePicture();
 
-                      // If the picture was taken, display it on a new screen.
-                      Navigator.push(
-                          (context),
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                DisplayPictureScreen(imagePath: image.path),
-                          ));
-                    } catch (e, stacktrace){
-                      debugPrintStack(label: e.toString(), stackTrace: stacktrace);
+                      postImage(File(image.path), 'id go here').then(
+                          (value) => {showImagePreviewPopup(context, image)});
+                    } catch (e, stacktrace) {
+                      debugPrintStack(
+                          label: e.toString(), stackTrace: stacktrace);
                     }
                   },
                 ),
@@ -126,4 +144,19 @@ class _CameraScreenState extends State<CameraScreen> {
       ),
     );
   }
+}
+
+void showImagePreviewPopup(BuildContext context, String image) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      content: Image.network(image),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
 }

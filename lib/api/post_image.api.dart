@@ -1,5 +1,4 @@
-import 'dart:html';
-
+import 'dart:io';
 import 'package:dio/dio.dart';
 
 final dio = Dio(
@@ -9,11 +8,12 @@ final dio = Dio(
 );
 
 
-Future<String> postImage(File image) async {
+Future<String> postImage(File image, String productId) async {
   return dio.post("/image", data: FormData.fromMap({
     "image": await MultipartFile.fromFile(
-      image.relativePath ?? image.name,
+      image.path,
       filename: "image",
     ),
+    productId: productId,
   })).then((value) => value.data["image_url"]);
 }
