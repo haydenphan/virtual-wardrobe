@@ -15,8 +15,7 @@ import '../model/selecteditem.dart';
 
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
-  final IO.Socket socket = IO.io('$baseUrl/stream');
-  final StreamController<bool> _isProcessingController = StreamController();
+  final IO.Socket socket = IO.io(baseUrl);
 
   CameraScreen({super.key, required this.cameras});
 
@@ -27,9 +26,13 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
+  // late Timer _timer;
+  // final StreamController<bool> _isProcessingController = StreamController();
+  // late st
 
   int currentIndex = 0;
   List<Product> products = [];
+  bool isLoading = false;
 
   Future<List<Product>> getSuggestionItems() async {
     return getItems();
@@ -39,15 +42,26 @@ class _CameraScreenState extends State<CameraScreen> {
   void initState() {
     super.initState();
     final frontCamera = widget.cameras.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.front,
+      (camera) => camera.lensDirection == CameraLensDirection.back,
     );
     _controller = CameraController(
       frontCamera,
-      ResolutionPreset.low,
+      ResolutionPreset.medium,
       enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.yuv420,
+      imageFormatGroup: ImageFormatGroup.jpeg,
     );
     _initializeControllerFuture = _controller.initialize();
+    // Start timer
+    // _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    //   if (_controller.value.isInitialized) {
+    //     takePictureEverySecond();
+    //   }
+    // });
+    // _isProcessingController.stream.listen((event) {
+    //   if (event) {
+    //     takePictureEverySecond();
+    //   }
+    // });
     // Get products
     getSuggestionItems().then((value) {
       setState(() {
@@ -57,25 +71,73 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   void takePictureEverySecond() async {
-    while (true && _controller.value.isInitialized) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      final rs = await _controller.takePicture();
-      // Push to api to process
-      File image = File(rs.path);
-      // postImage(image, '1');
-      //transfer image to server
-      widget.socket.emit('image', image.readAsBytesSync());
+    // try {
+    //   final image = await _controller.takePicture();
+    //   print(image.path);
+    //   // widget.socket.emit('stream', image.readAsBytes());
+    // } catch (e) {
+    //   print('Taking picture Error: $e');
+    // }
+    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final image = await _controller.takePicture();
+      print(image.path);
+      widget.socket.emit('stream',
+          {'image': image.path, 'product_id': products[currentIndex].id});
+      setState(() {});
+    } catch (e) {
+      print('Taking picture Error: $e');
+    }
+  }
+
+  Future<File> captureStaticImage() async {
+    try {
+      final image = await _controller.takePicture();
+      final tryonImage =
+          takeStaticPicture(File(image.path), products[currentIndex].id);
+      return tryonImage;
+    } catch (e) {
+      print('Taking picture Error: $e');
+      throw e;
     }
   }
 
   @override
   void dispose() {
+    // _timer.cancel();
     _controller.dispose();
     super.dispose();
   }
 
+  void flipCamera() async {
+    final frontCamera = widget.cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.front,
+    );
+    final backCamera = widget.cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.back,
+    );
+    if (_controller.description == frontCamera) {
+      _controller = CameraController(
+        backCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+    } else {
+      _controller = CameraController(
+        frontCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+    }
+    await _controller.initialize();
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
+    // takePictureEverySecond();
     return Scaffold(
       body: Stack(
         children: <Widget>[
@@ -89,11 +151,6 @@ class _CameraScreenState extends State<CameraScreen> {
                 return Transform.scale(
                     scale: scale,
                     child: Center(child: CameraPreview(_controller)));
-                return Center(
-                  // width: MediaQuery.of(context).size.width,
-                  // height: MediaQuery.of(context).size.height,
-                  child: CameraPreview(_controller),
-                );
               } else {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -136,34 +193,50 @@ class _CameraScreenState extends State<CameraScreen> {
             left: 0,
             right: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Color.fromRGBO(89, 157, 159, 1),
+              decoration: BoxDecoration(
+                color: isLoading
+                    ? Color.fromRGBO(72, 98, 99, 1)
+                    : Color.fromRGBO(89, 157, 159, 1),
                 shape: BoxShape.circle,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: IconButton(
-                  icon: const Icon(Icons.camera_alt_rounded,
-                      size: 35.0, color: Color.fromARGB(255, 255, 255, 255)),
-                  onPressed: () async {
-                    try {
-                      await _initializeControllerFuture;
-
-                      final image = await _controller.takePicture();
-
-                      // If the picture was taken, display it on a new screen.
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              DisplayPictureScreen(imagePath: image.path),
-                        ),
-                      );
-                    } catch (e) {
-                      print(e);
-                    }
-                  },
-                ),
-              ),
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: IconButton(
+                        icon: const Icon(Icons.camera_alt_rounded,
+                            size: 35.0,
+                            color: Color.fromARGB(255, 255, 255, 255)),
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                try {
+                                  await _initializeControllerFuture;
+                                  setState(() {
+                                    isLoading = true;
+                                  });
+                                  final image = await captureStaticImage();
+                                  setState(() {
+                                    isLoading = false;
+                                  });
+                                  // // If the picture was taken, display it on a new screen.
+                                  // await Navigator.of(context).push(
+                                  //   MaterialPageRoute(
+                                  //     builder: (context) =>
+                                  //         DisplayPictureScreen(image: image),
+                                  //   ),
+                                  // );
+                                  // flipCamera();
+                                  await showImagePreviewPopup(context, image,
+                                      () {
+                                    // flipCamera();
+                                  });
+                                } catch (e) {
+                                  print(e);
+                                }
+                              },
+                      ),
+                    ),
             ),
           ),
         ],
@@ -172,14 +245,21 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 }
 
-Future<dynamic> showImagePreviewPopup(BuildContext context, String image) {
+Future<dynamic> showImagePreviewPopup(
+    BuildContext context, File image, VoidCallback? onConfirm) {
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      content: Image.network(image),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.0),
+      ),
+      content: Image.file(image),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pop(context);
+            onConfirm?.call();
+          },
           child: const Text('Close'),
         ),
       ],

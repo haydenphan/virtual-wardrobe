@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-const baseUrl = 'https://caa7-2402-9d80-44a-8b8b-311e-c2aa-6580-4ffc.ngrok-free.app';
+const baseUrl = 'http://192.168.43.48:5000';
 
 class AppColors {
   static const Color primary = Color(0xFF2D9596);

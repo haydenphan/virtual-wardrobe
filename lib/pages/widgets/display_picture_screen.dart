@@ -1,12 +1,11 @@
-
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 
 class DisplayPictureScreen extends StatefulWidget {
-  final String imagePath;
+  final File image;
 
-  const DisplayPictureScreen({super.key, required this.imagePath});
+  const DisplayPictureScreen({super.key, required this.image});
 
   @override
   State<DisplayPictureScreen> createState() => _DisplayPictureScreenState();
@@ -15,6 +14,6 @@ class DisplayPictureScreen extends StatefulWidget {
 class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   @override
   Widget build(BuildContext context) {
-    return Image.file(File(widget.imagePath));
+    return Image.file(widget.image);
   }
 }
